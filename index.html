@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>家族 買い物リスト</title>
+
+  <!-- iPhoneの「ホーム画面に追加」用設定 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="買い物リスト">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#ff8a00">
+  <link rel="manifest" href="manifest.json">
+  <!-- 同じリポジトリ内に置いてある画像を直接参照（別ドメイン経由にしないことで
+       iOSのapple-touch-icon取得をより確実にする） -->
+  <link rel="apple-touch-icon" href="icon-touch.png">
+  <link rel="icon" type="image/png" href="favicon.png">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="top-row">
+        <h1 id="appTitle">🛒 買い物リスト</h1>
+        <button class="icon-btn" id="settingsBtn">⚙️</button>
+      </div>
+      <div class="tabs" id="tabs"></div>
+    </header>
+
+    <div id="shoppingSection">
+      <div class="add-form">
+        <input type="text" id="itemNameInput" placeholder="商品名を入力" maxlength="60">
+        <input type="number" id="itemQtyInput" placeholder="1" min="1" inputmode="numeric">
+        <button id="addBtn">＋</button>
+      </div>
+
+      <main id="list"></main>
+    </div>
+
+    <div id="memoSection" class="hidden">
+      <div class="memo-form">
+        <input type="text" id="memoTitleInput" placeholder="項目名（例: 食器用洗剤）" maxlength="60">
+        <textarea id="memoDetailInput" placeholder="詳細メモ（例: Amazon 698円 / DCM 598円。600円以下なら買い）"></textarea>
+        <button id="memoAddBtn">追加</button>
+      </div>
+
+      <main id="memoList"></main>
+    </div>
+
+    <button class="refresh-fab" id="refreshBtn">🔄</button>
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <!-- 初回利用者選択 / 設定モーダル -->
+  <div class="modal-overlay hidden" id="userModal">
+    <div class="modal-sheet">
+      <h2 id="userModalTitle">この端末を使う人は？</h2>
+      <p>選択内容はこの端末に保存され、以降は自動で「登録者・購入者」として記録されます。</p>
+      <button class="user-option" data-user="祐助">祐助</button>
+      <button class="user-option" data-user="あっちゃん">あっちゃん</button>
+      <button class="modal-close hidden" id="userModalClose">閉じる</button>
+    </div>
+  </div>
+
+  <!-- 売り場カテゴリ選択モーダル（スーパーのみ） -->
+  <div class="modal-overlay hidden" id="aisleModal">
+    <div class="modal-sheet">
+      <h2>売り場カテゴリを選択</h2>
+      <p>一度手動で選ぶと、その後は自動判定で上書きされません。</p>
+      <div id="aisleOptionList"></div>
+      <button class="modal-close" id="aisleModalClose">閉じる</button>
+    </div>
+  </div>
+
+  <!-- メモ編集モーダル -->
+  <div class="modal-overlay hidden" id="memoEditModal">
+    <div class="modal-sheet memo-edit-sheet">
+      <h2>メモを編集</h2>
+      <input type="text" id="memoEditTitleInput" placeholder="項目名" maxlength="60">
+      <textarea id="memoEditDetailInput" placeholder="詳細メモ"></textarea>
+      <div class="memo-edit-actions">
+        <button class="memo-cancel-btn" id="memoEditCancelBtn">キャンセル</button>
+        <button class="memo-save-btn" id="memoEditSaveBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading-overlay hidden" id="loadingOverlay">読み込み中…</div>
+
+  <div class="error-banner hidden" id="errorBanner">
+    <div class="error-title">データの読み込みに失敗しました</div>
+    <div class="error-detail" id="errorDetail"></div>
+    <button id="errorRetryBtn">再読み込み</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

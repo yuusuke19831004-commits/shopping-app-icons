@@ -1,0 +1,20 @@
+{
+  "name": "家族 買い物リスト",
+  "short_name": "買い物リスト",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f5f7",
+  "theme_color": "#ff8a00",
+  "icons": [
+    {
+      "src": "icon-touch.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ]
+}
