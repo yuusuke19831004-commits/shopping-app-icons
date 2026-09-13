@@ -240,6 +240,8 @@ function renderList() {
     var name = document.createElement('div');
     name.className = 'item-name';
     name.textContent = item.name;
+    // 商品名タップでも編集モーダルを開けるようにする（鉛筆アイコンと同じ動作）
+    name.addEventListener('click', function () { openItemEditModal(item); });
     var meta = document.createElement('div');
     meta.className = 'item-meta';
     meta.textContent = formatMeta(item);

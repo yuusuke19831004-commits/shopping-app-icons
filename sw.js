@@ -21,7 +21,7 @@
  * 「更新した日は必ずバージョンを上げる」運用にすることで確実性を最優先する。
  */
 
-var CACHE_VERSION = 'v2';
+var CACHE_VERSION = 'v3';
 var CACHE_NAME = 'shopping-app-static-' + CACHE_VERSION;
 
 // キャッシュ対象は「同一オリジンの静的ファイルのみ」。
