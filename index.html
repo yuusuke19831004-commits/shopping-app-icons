@@ -74,6 +74,19 @@
     </div>
   </div>
 
+  <!-- 商品編集モーダル（商品名・数量のみ） -->
+  <div class="modal-overlay hidden" id="itemEditModal">
+    <div class="modal-sheet item-edit-sheet">
+      <h2>商品を編集</h2>
+      <input type="text" id="itemEditNameInput" placeholder="商品名" maxlength="60">
+      <input type="number" id="itemEditQtyInput" placeholder="数量" min="1" inputmode="numeric">
+      <div class="memo-edit-actions">
+        <button class="memo-cancel-btn" id="itemEditCancelBtn">キャンセル</button>
+        <button class="memo-save-btn" id="itemEditSaveBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
   <!-- メモ編集モーダル -->
   <div class="modal-overlay hidden" id="memoEditModal">
     <div class="modal-sheet memo-edit-sheet">

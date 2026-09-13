@@ -76,7 +76,9 @@ var state = {
   memosLoaded: false,
   user: null,
   aisleTargetId: null,
-  memoEditId: null
+  memoEditId: null,
+  itemEditId: null,
+  itemEditCategory: null
 };
 
 function getUser() {
@@ -192,9 +194,23 @@ function onSelectTab(cat) {
   }
 }
 
+/**
+ * サーバーの登録日時（"yyyy/MM/dd HH:mm:ss" 形式）を、
+ * カード表示用の "M/D HH:mm"（年・秒なし）へ変換する。
+ * 想定外の形式の場合は空文字を返す（表示を壊さないための防御）。
+ */
+function formatRegisteredAt(registeredAt) {
+  if (!registeredAt) return '';
+  var m = String(registeredAt).match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{2})/);
+  if (!m) return '';
+  return Number(m[2]) + '/' + Number(m[3]) + ' ' + m[4] + ':' + m[5];
+}
+
 function formatMeta(item) {
   var by = item.registeredBy || '';
-  return by ? (by + 'さんが登録') : '';
+  var at = formatRegisteredAt(item.registeredAt);
+  if (by && at) return by + ' ・ ' + at;
+  return by || at || '';
 }
 
 function renderList() {
@@ -244,6 +260,11 @@ function renderList() {
     qty.className = 'item-qty';
     qty.textContent = '×' + item.qty;
 
+    var editBtn = document.createElement('button');
+    editBtn.className = 'edit-btn';
+    editBtn.textContent = '✏️';
+    editBtn.addEventListener('click', function () { openItemEditModal(item); });
+
     var delBtn = document.createElement('button');
     delBtn.className = 'delete-btn';
     delBtn.textContent = '✕';
@@ -252,6 +273,7 @@ function renderList() {
     card.appendChild(checkBtn);
     card.appendChild(info);
     card.appendChild(qty);
+    card.appendChild(editBtn);
     card.appendChild(delBtn);
     listEl.appendChild(card);
   });
@@ -375,6 +397,45 @@ function onSelectAisle(aisle) {
     });
 }
 document.getElementById('aisleModalClose').addEventListener('click', closeAisleModal);
+
+// ---------------- 商品編集モーダル（商品名・数量のみ） ----------------
+// 登録日時・登録者・IDは編集対象外（サーバー側 updateItem() も名前・数量以外は変更しない）。
+function openItemEditModal(item) {
+  state.itemEditId = item.id;
+  state.itemEditCategory = state.currentCategory;
+  document.getElementById('itemEditNameInput').value = item.name;
+  document.getElementById('itemEditQtyInput').value = item.qty;
+  document.getElementById('itemEditModal').classList.remove('hidden');
+}
+function closeItemEditModal() {
+  document.getElementById('itemEditModal').classList.add('hidden');
+  state.itemEditId = null;
+  state.itemEditCategory = null;
+}
+function onSaveItemEdit() {
+  var id = state.itemEditId;
+  var category = state.itemEditCategory;
+  if (!id || !category) return;
+  var name = document.getElementById('itemEditNameInput').value.trim();
+  if (!name) return;
+  var qtyInput = document.getElementById('itemEditQtyInput').value;
+  var qty = qtyInput ? Number(qtyInput) : 1;
+  if (!qty || qty <= 0) qty = 1;
+  closeItemEditModal();
+  apiPost('updateItem', { category: category, id: id, name: name, qty: qty })
+    .then(function (data) {
+      state.items = normalizeItems(data);
+      saveItemsCache(state.items);
+      renderList();
+      showToast(name + ' を更新しました');
+    })
+    .catch(function (err) {
+      showToast('更新に失敗しました');
+      console.error(err);
+    });
+}
+document.getElementById('itemEditCancelBtn').addEventListener('click', closeItemEditModal);
+document.getElementById('itemEditSaveBtn').addEventListener('click', onSaveItemEdit);
 
 // ---------------- メモタブ ----------------
 function formatMemoMeta(memo) {

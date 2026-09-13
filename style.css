@@ -155,6 +155,16 @@ main { flex: 1; padding: 8px 12px 100px 12px; }
   display: flex; align-items: center; justify-content: center;
 }
 .item-card.purchasing { opacity: 0.4; }
+.edit-btn {
+  flex: 0 0 auto;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #eef1f5;
+  color: #556;
+  font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+}
 
 /* 売り場カテゴリ（スーパーのみ） */
 .item-aisle {
@@ -253,6 +263,15 @@ main { flex: 1; padding: 8px 12px 100px 12px; }
   resize: vertical;
 }
 .memo-edit-sheet input[type="text"] {
+  width: 100%;
+  font-size: 16px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fafafa;
+  margin-bottom: 12px;
+}
+.item-edit-sheet input[type="text"], .item-edit-sheet input[type="number"] {
   width: 100%;
   font-size: 16px;
   padding: 12px;
