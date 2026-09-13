@@ -66,6 +66,8 @@ var AISLE_CATEGORIES = [
   '常温食品', '飲料・お菓子', '日用品', '冷凍食品・アイス・氷', 'その他'
 ];
 var STORAGE_KEY = 'shopping_app_user';
+// 前回取得した買い物リストのキャッシュ（起動直後の即時表示用）
+var ITEMS_CACHE_KEY = 'shopping_app_items_cache';
 
 var state = {
   currentCategory: CATEGORIES[0],
@@ -83,6 +85,39 @@ function getUser() {
 function setUser(name) {
   try { localStorage.setItem(STORAGE_KEY, name); } catch (e) {}
   state.user = name;
+}
+
+/**
+ * 前回取得した買い物リストをlocalStorageから読み込む。
+ * 壊れている・存在しない・形式が不正な場合は、通常のAPI取得に
+ * フォールブックできるよう null を返すだけにする（例外を投げない）。
+ */
+function loadCachedItems() {
+  try {
+    var raw = localStorage.getItem(ITEMS_CACHE_KEY);
+    if (!raw) return null;
+    var cache = JSON.parse(raw);
+    if (!cache || typeof cache !== 'object' || !cache.items) return null;
+    return cache;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * 取得済みの買い物リストをlocalStorageへ保存する。
+ * savedAt を持たせておくことで、将来的に古すぎるキャッシュを
+ * 無視する等の判断ができるようにしておく（現時点では期限切れ判定はしない）。
+ */
+function saveItemsCache(items) {
+  try {
+    localStorage.setItem(ITEMS_CACHE_KEY, JSON.stringify({
+      items: items,
+      savedAt: Date.now()
+    }));
+  } catch (e) {
+    // 保存に失敗しても致命的ではないため無視する（容量超過等）
+  }
 }
 
 function showLoading(show) {
@@ -235,6 +270,7 @@ function refreshData(showSpin) {
   apiGet('getAllItems')
     .then(function (data) {
       state.items = normalizeItems(data);
+      saveItemsCache(state.items);
       hideErrorBanner();
       renderList();
     })
@@ -260,6 +296,7 @@ function onAdd() {
   apiPost('addItem', { category: state.currentCategory, name: name, qty: qty, user: state.user })
     .then(function (data) {
       state.items = normalizeItems(data);
+      saveItemsCache(state.items);
       renderList();
       showToast(name + ' を追加しました');
     })
@@ -275,6 +312,7 @@ function onPurchase(item, card) {
   apiPost('purchaseItem', { category: state.currentCategory, id: item.id, user: state.user })
     .then(function (data) {
       state.items = normalizeItems(data);
+      saveItemsCache(state.items);
       renderList();
       showToast(item.name + ' を購入済みにしました');
     })
@@ -291,6 +329,7 @@ function onDelete(item, card) {
   apiPost('deleteItem', { category: state.currentCategory, id: item.id })
     .then(function (data) {
       state.items = normalizeItems(data);
+      saveItemsCache(state.items);
       renderList();
       showToast(item.name + ' を削除しました');
     })
@@ -326,6 +365,7 @@ function onSelectAisle(aisle) {
   apiPost('updateItemAisle', { id: id, aisle: aisle })
     .then(function (data) {
       state.items = normalizeItems(data);
+      saveItemsCache(state.items);
       renderList();
       showToast('売り場カテゴリを「' + aisle + '」に変更しました');
     })
@@ -520,13 +560,57 @@ document.getElementById('itemNameInput').addEventListener('keydown', function (e
 document.getElementById('refreshBtn').addEventListener('click', function () { refreshData(true); });
 
 // ---------------- 初期化 ----------------
+/**
+ * 起動時のバックグラウンド更新。
+ * キャッシュを先に表示済みの状態で呼ばれる想定なので、
+ * ローディングオーバーレイは出さない（体感の「待たされ感」を出さないため）。
+ * 取得結果が前回表示分と同じ場合は再描画しない（不要なチラつき防止）。
+ * 失敗時も、キャッシュ表示はそのまま維持し、エラーバナーではなく
+ * 控えめなトースト表示だけにする。
+ */
+function refreshItemsInBackground(hadCache) {
+  apiGet('getAllItems')
+    .then(function (data) {
+      var normalized = normalizeItems(data);
+      var changed = JSON.stringify(normalized) !== JSON.stringify(state.items);
+      state.items = normalized;
+      saveItemsCache(state.items);
+      hideErrorBanner();
+      if (changed) renderList();
+    })
+    .catch(function (err) {
+      console.error(err);
+      if (hadCache) {
+        // キャッシュ表示は維持したまま、通信失敗だけ小さく知らせる
+        showToast('最新データの取得に失敗しました（前回の内容を表示中）');
+      } else {
+        showErrorBanner(err);
+      }
+    });
+}
+
 function init() {
   renderTabs();
   state.user = getUser();
+
+  var cached = loadCachedItems();
+  if (cached) {
+    // キャッシュがあれば即座に前回の一覧を表示し、
+    // ローディング表示なしで裏から最新データを取得する
+    state.items = normalizeItems(cached.items);
+    renderList();
+    if (!state.user) openUserModal(false);
+    refreshItemsInBackground(true);
+    return;
+  }
+
+  // キャッシュが無い（壊れている場合も含む）初回起動時は、
+  // これまでどおりAPI取得完了後に表示する
   showLoading(true);
   apiGet('getAllItems')
     .then(function (data) {
       state.items = normalizeItems(data);
+      saveItemsCache(state.items);
       renderList();
       showLoading(false);
       hideErrorBanner();
