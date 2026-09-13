@@ -96,5 +96,18 @@
   </div>
 
   <script src="app.js"></script>
+  <script>
+    // 静的ファイル（HTML/CSS/JS/アイコン等）を端末キャッシュするService Worker。
+    // 対応していないブラウザでは何も起きず、既存動作に影響しない。
+    // 買い物データ・Apps Script APIはService Workerでキャッシュしない
+    // （sw.js側でnetwork-only扱いにしている）。
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js').catch(function (err) {
+          console.warn('Service Workerの登録に失敗しました（アプリ動作には影響しません）:', err);
+        });
+      });
+    }
+  </script>
 </body>
 </html>
